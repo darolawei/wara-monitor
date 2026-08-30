@@ -43,7 +43,7 @@ export function setupAuth(app: Express) {
     cookie: {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
     },
   };
 
@@ -118,15 +118,22 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 export async function seedDefaultUser() {
-  const existingAdmin = await storage.getUserByUsername("admin");
+  const adminUsername = process.env.DEFAULT_ADMIN_USERNAME || "admin";
+  const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || (process.env.NODE_ENV === "production" ? "" : "wara2026");
+
+  if (!adminPassword) {
+    throw new Error("DEFAULT_ADMIN_PASSWORD is required in production.");
+  }
+
+  const existingAdmin = await storage.getUserByUsername(adminUsername);
   if (!existingAdmin) {
-    const hashedPassword = await hashPassword("wara2026");
+    const hashedPassword = await hashPassword(adminPassword);
     await storage.createUser({
-      username: "admin",
+      username: adminUsername,
       password: hashedPassword,
       fullName: "System Administrator",
       role: "admin",
     });
-    console.log("[auth] Default admin user created — username: admin, password: wara2026");
+    console.log(`[auth] Default admin user created - username: ${adminUsername}`);
   }
 }
