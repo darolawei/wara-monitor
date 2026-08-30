@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: wara-monitor
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: npm ci && npm run build
+    preDeployCommand: npm run db:push
+    startCommand: npm start
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wara-monitor-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+
+databases:
+  - name: wara-monitor-db
+    plan: free
+    region: singapore
+    postgresMajorVersion: 16
