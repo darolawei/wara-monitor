@@ -52,6 +52,46 @@ export async function registerRoutes(
     res.send(csv);
   });
 
+  // Sensor ingestion endpoint for ESP32/Wokwi prototypes.
+  app.post('/api/sensor/readings', async (req, res) => {
+    try {
+      const expectedKey = process.env.SENSOR_API_KEY;
+      if (!expectedKey) {
+        return res.status(500).json({ message: 'SENSOR_API_KEY is not configured' });
+      }
+
+      const providedKey = req.header('x-sensor-key') || req.header('authorization')?.replace(/^Bearer\s+/i, '');
+      if (providedKey !== expectedKey) {
+        return res.status(401).json({ message: 'Invalid sensor API key' });
+      }
+
+      const input = z.object({
+        wellId: z.coerce.number().int().positive(),
+        salinity: z.coerce.number().min(0).max(100),
+      }).parse(req.body);
+
+      const well = await storage.getWell(input.wellId);
+      if (!well) {
+        return res.status(404).json({ message: 'Well not found' });
+      }
+
+      const reading = await storage.createReading({
+        wellId: input.wellId,
+        salinity: String(input.salinity),
+      });
+
+      res.status(201).json(reading);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      throw err;
+    }
+  });
+
   // Protected write endpoints (only authenticated staff can modify data)
   app.post(api.wells.create.path, requireAuth, async (req, res) => {
     try {

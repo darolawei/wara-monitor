@@ -9,6 +9,7 @@ Wara Monitor is a full-stack water salinity monitoring dashboard for Papua New G
 - Well detail pages with salinity trend charts
 - Manual salinity reading entry
 - CSV export for well readings
+- ESP32/Wokwi sensor reading ingestion
 - Staff login with session authentication
 - PostgreSQL-backed data storage
 
@@ -38,6 +39,7 @@ SESSION_SECRET=change-this-to-a-long-random-string
 PORT=5000
 DEFAULT_ADMIN_USERNAME=admin
 DEFAULT_ADMIN_PASSWORD=change-this-before-going-live
+SENSOR_API_KEY=change-this-sensor-secret
 ```
 
 Do not commit `.env`. Use `.env.example` as the safe template.
@@ -102,6 +104,16 @@ npm start
 This app needs a Node.js server and PostgreSQL database, so GitHub Pages is not enough.
 
 The repository includes `render.yaml` for Render Blueprint deployment. See [DEPLOY.md](./DEPLOY.md) for the live deployment steps.
+
+## ESP32 Demo
+
+The app includes a secure endpoint for ESP32 sensor prototypes:
+
+```text
+POST /api/sensor/readings
+```
+
+Use [SENSOR_SETUP.md](./SENSOR_SETUP.md) to connect a virtual ESP32 in Wokwi or a real ESP32 sensor later.
 
 ## Repository
 
