@@ -135,5 +135,9 @@ export async function seedDefaultUser() {
       role: "admin",
     });
     console.log(`[auth] Default admin user created - username: ${adminUsername}`);
+  } else if (process.env.DEFAULT_ADMIN_PASSWORD) {
+    const hashedPassword = await hashPassword(adminPassword);
+    await storage.updateUserPassword(adminUsername, hashedPassword);
+    console.log(`[auth] Default admin password updated - username: ${adminUsername}`);
   }
 }
