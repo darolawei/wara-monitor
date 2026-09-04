@@ -1,4 +1,4 @@
-import { Droplet, AlertOctagon, ShieldCheck, TrendingUp, Loader2, RefreshCw, MapPin, X } from "lucide-react";
+import { Droplet, AlertOctagon, ShieldCheck, TrendingUp, Loader2, RefreshCw, MapPin, X, Brain, Siren, ClipboardCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -7,6 +7,7 @@ import { CreateWellDialog } from "@/components/wells/CreateWellDialog";
 import { useWells } from "@/hooks/use-wells";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { WellsListResponse } from "@shared/routes";
 
 function formatRelativeTime(date: Date | null): string {
   if (!date) return "never";
@@ -28,6 +29,73 @@ function useProvinceFilter(): string | null {
     const province = params.get("province");
     return province && province.trim() !== "" ? province : null;
   }, [location]);
+}
+
+type AiInsight = {
+  level: "stable" | "watch" | "urgent";
+  title: string;
+  summary: string;
+  primaryAction: string;
+  fieldChecklist: string[];
+};
+
+function buildAiInsight(wells: WellsListResponse | undefined, provinceFilter: string | null): AiInsight {
+  if (!wells || wells.length === 0) {
+    return {
+      level: "stable",
+      title: "AI Risk Advisor: awaiting sensor data",
+      summary: provinceFilter
+        ? `No wells are registered in ${provinceFilter}, so the advisor has no field data for this province.`
+        : "Register wells or connect an ESP32 sensor to start generating water safety guidance.",
+      primaryAction: "Register a well and collect the first salinity reading.",
+      fieldChecklist: ["Confirm the monitoring location", "Calibrate the sensor", "Collect a baseline fresh-water reading"],
+    };
+  }
+
+  const sortedByRisk = [...wells].sort((a, b) => Number(b.currentSalinity) - Number(a.currentSalinity));
+  const highest = sortedByRisk[0];
+  const dangerWells = wells.filter((w) => w.status === "danger");
+  const warningWells = wells.filter((w) => w.status === "warning");
+  const avg = wells.reduce((sum, well) => sum + Number(well.currentSalinity), 0) / wells.length;
+  const affectedProvinces = Array.from(new Set(wells.filter((w) => w.status !== "safe").map((w) => w.province).filter(Boolean)));
+
+  if (dangerWells.length > 0) {
+    return {
+      level: "urgent",
+      title: "AI Risk Advisor: immediate field response",
+      summary: `${dangerWells.length} well${dangerWells.length === 1 ? "" : "s"} exceed the danger threshold. Highest risk is ${highest.name} at ${Number(highest.currentSalinity).toFixed(2)} ppt${highest.province ? ` in ${highest.province}` : ""}.`,
+      primaryAction: "Notify the community, stop drinking-water use from critical wells, and confirm readings with a second sample.",
+      fieldChecklist: [
+        "Retest the highest-risk well",
+        "Mark unsafe water points",
+        "Prepare alternative water supply",
+        affectedProvinces.length > 0 ? `Prioritize ${affectedProvinces.join(", ")}` : "Prioritize affected coastal communities",
+      ],
+    };
+  }
+
+  if (warningWells.length > 0 || avg >= 1) {
+    return {
+      level: "watch",
+      title: "AI Risk Advisor: saltwater intrusion watch",
+      summary: `${warningWells.length} well${warningWells.length === 1 ? "" : "s"} are approaching unsafe salinity. Network average is ${avg.toFixed(2)} ppt.`,
+      primaryAction: "Increase sampling frequency and check whether tides, drought, or pumping are raising salinity.",
+      fieldChecklist: [
+        "Collect another reading within 24 hours",
+        "Compare coastal and inland wells",
+        "Ask residents about taste changes",
+        "Prepare an alert if readings pass 3.0 ppt",
+      ],
+    };
+  }
+
+  return {
+    level: "stable",
+    title: "AI Risk Advisor: water network stable",
+    summary: `All monitored wells are currently below the warning threshold. Network average is ${avg.toFixed(2)} ppt.`,
+    primaryAction: "Keep the sensors online and maintain routine monitoring.",
+    fieldChecklist: ["Continue daily sampling", "Keep one manual backup reading", "Watch for sudden increases after dry weather"],
+  };
 }
 
 export default function Dashboard() {
@@ -53,6 +121,7 @@ export default function Dashboard() {
   const dangerWells = wells?.filter((w) => w.status === "danger").length || 0;
   const warningWells = wells?.filter((w) => w.status === "warning").length || 0;
   const safeWells = wells?.filter((w) => w.status === "safe").length || 0;
+  const aiInsight = buildAiInsight(wells, provinceFilter);
 
   const avgSalinity = totalWells > 0
     ? (wells!.reduce((sum, w) => sum + Number(w.currentSalinity), 0) / totalWells).toFixed(2)
@@ -167,6 +236,55 @@ export default function Dashboard() {
           <div className="flex items-end gap-2">
             <span className="text-4xl font-display font-bold text-foreground" data-testid="stat-avg-salinity">{avgSalinity}</span>
             <span className="text-sm font-medium text-muted-foreground mb-1 block">ppt</span>
+          </div>
+        </div>
+      </div>
+
+      <div className={`glass-card rounded-2xl p-6 md:p-8 mb-12 border-l-4 ${
+        aiInsight.level === "urgent"
+          ? "border-l-red-500"
+          : aiInsight.level === "watch"
+            ? "border-l-amber-500"
+            : "border-l-emerald-500"
+      }`}>
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+          <div className="flex gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+              aiInsight.level === "urgent"
+                ? "bg-red-500/10 text-red-500"
+                : aiInsight.level === "watch"
+                  ? "bg-amber-500/10 text-amber-500"
+                  : "bg-emerald-500/10 text-emerald-500"
+            }`}>
+              <Brain className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <h2 className="text-2xl font-display font-bold">{aiInsight.title}</h2>
+                <Badge variant={aiInsight.level === "urgent" ? "destructive" : "secondary"} className="uppercase tracking-wide">
+                  {aiInsight.level}
+                </Badge>
+              </div>
+              <p className="text-muted-foreground max-w-3xl">{aiInsight.summary}</p>
+              <div className="mt-4 flex items-start gap-2 text-sm font-medium text-foreground">
+                <Siren className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                <span>{aiInsight.primaryAction}</span>
+              </div>
+            </div>
+          </div>
+          <div className="lg:w-80 bg-muted/40 rounded-xl p-4 border border-border/50">
+            <div className="flex items-center gap-2 font-semibold mb-3">
+              <ClipboardCheck className="w-4 h-4 text-primary" />
+              Recommended Field Steps
+            </div>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              {aiInsight.fieldChecklist.map((item) => (
+                <li key={item} className="flex gap-2">
+                  <span className="mt-2 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ Wara Monitor is a full-stack water salinity monitoring dashboard for Papua New G
 ## Features
 
 - Dashboard for monitoring well status
+- AI Risk Advisor with field-response recommendations
 - Interactive Papua New Guinea province map
 - Well detail pages with salinity trend charts
 - Manual salinity reading entry
@@ -114,6 +115,8 @@ POST /api/sensor/readings
 ```
 
 Use [SENSOR_SETUP.md](./SENSOR_SETUP.md) to connect a virtual ESP32 in Wokwi or a real ESP32 sensor later.
+
+When readings change, the dashboard updates the AI Risk Advisor so teams can see whether the field response should stay routine, move to watch mode, or trigger urgent action.
 
 ## Repository
 
