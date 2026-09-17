@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/lib/protected-route";
 import Dashboard from "@/pages/Dashboard";
 import WellDetails from "@/pages/WellDetails";
 import MapView from "@/pages/MapView";
+import SensorSimulator from "@/pages/SensorSimulator";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/map" component={MapView} />
+      <ProtectedRoute path="/simulator" component={SensorSimulator} />
       <ProtectedRoute path="/wells/:id" component={WellDetails} />
       <Route component={NotFound} />
     </Switch>

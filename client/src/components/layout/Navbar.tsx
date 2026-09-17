@@ -1,4 +1,4 @@
-import { Droplets, Activity, Menu, LogOut, Sun, Moon, User as UserIcon } from "lucide-react";
+import { Droplets, Activity, LogOut, Sun, Moon, User as UserIcon, FlaskConical } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +42,9 @@ export function Navbar() {
               </Link>
               <Link href="/map" className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${location === '/map' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`} data-testid="link-map">
                 Map View
+              </Link>
+              <Link href="/simulator" className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${location === '/simulator' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`} data-testid="link-simulator">
+                Simulator
               </Link>
             </div>
             
@@ -91,6 +94,12 @@ export function Navbar() {
                     <Link href="/map">
                       <UserIcon className="mr-2 h-4 w-4" />
                       Map View
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="md:hidden" asChild>
+                    <Link href="/simulator">
+                      <FlaskConical className="mr-2 h-4 w-4" />
+                      Simulator
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="md:hidden" />
