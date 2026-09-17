@@ -25,7 +25,7 @@ Wara Monitor is a web-based water salinity monitoring platform for Papua New Gui
 
 The platform classifies salinity readings into three simple categories: safe, warning, and danger. This makes the information understandable for non-technical users and helps local teams act quickly. A low salinity reading is shown as safe, a moderate reading triggers a warning, and a high reading marks the well as danger. The dashboard also includes an AI Risk Advisor that converts monitoring data into practical field-response recommendations.
 
-The prototype supports both manual data entry and sensor-based data collection. For the sensor demo, an ESP32 or Wokwi virtual ESP32 can send readings to a secure API endpoint. A potentiometer can simulate a salinity sensor during the hackathon, while a real TDS or salinity sensor can be connected later. This approach allows the project to be demonstrated immediately and expanded into real field deployments.
+The prototype supports manual data entry, sensor-based data collection, and a virtual salt-water simulator for hackathon demonstration. In the simulator, the team can show a glass of fresh water becoming more saline as salt is added, then send the virtual sensor reading into the live dashboard. For the hardware version, an ESP32 or Wokwi virtual ESP32 can send readings to a secure API endpoint. A real TDS or salinity sensor can be connected later. This approach allows the project to be demonstrated immediately and expanded into real field deployments.
 
 ## 4. Expected Impact
 
@@ -37,24 +37,23 @@ Economically, Wara Monitor can reduce the cost of emergency response by helping 
 
 ## 5. Implementation
 
-The team will develop Wara Monitor as a full-stack web application. The frontend is built with React, TypeScript, Vite, Tailwind CSS, and reusable UI components. Users can log in, view a dashboard, open well detail pages, inspect salinity trend charts, filter wells through an interactive PNG province map, create new wells, add readings, and export data.
+The team will develop Wara Monitor as a full-stack web application. The frontend is built with React, TypeScript, Vite, Tailwind CSS, and reusable UI components. Users can log in, view a dashboard, open well detail pages, inspect salinity trend charts, filter wells through an interactive PNG province map, create new wells, add readings, run the virtual salt-water sensor simulator, and export data.
 
 The backend is built with Express and TypeScript. PostgreSQL stores users, wells, and salinity readings, while Drizzle ORM manages the database schema and queries. Authentication protects staff-only actions such as creating wells and adding manual readings. Public read endpoints allow monitoring data to be viewed, while protected write endpoints prevent unauthorized data changes.
 
-For the sensor prototype, an ESP32 posts salinity readings to `/api/sensor/readings` using a private sensor API key. The backend validates the request, stores the reading, and automatically updates the well's current salinity and status. During the hackathon, Wokwi can simulate the ESP32 and a potentiometer can simulate the salinity sensor. In a later field version, the potentiometer can be replaced with a calibrated TDS or salinity sensor module.
+For the sensor prototype, an ESP32 posts salinity readings to `/api/sensor/readings` using a private sensor API key. The backend validates the request, stores the reading, and automatically updates the well's current salinity and status. During the hackathon, the built-in browser simulator demonstrates the same workflow without physical hardware, while Wokwi can also simulate the ESP32. In a later field version, the virtual sensor can be replaced with a calibrated TDS or salinity sensor module.
 
 The planned implementation steps are:
 
 1. Finalize the database schema for users, wells, provinces, and readings.
 2. Complete the dashboard, map view, well detail pages, and data-entry forms.
 3. Add salinity status logic and AI Risk Advisor recommendations.
-4. Connect the ESP32/Wokwi sensor demo to the secure sensor API.
+4. Connect the virtual salt-water simulator and ESP32/Wokwi sensor demo to the monitoring workflow.
 5. Test local and deployed versions using sample wells in Manus, East New Britain, and Bougainville.
 6. Deploy the application with a Node.js server and PostgreSQL database.
 
 ## 6. Conclusion
 
-Wara Monitor responds to the growing challenge of water salinity in Papua New Guinea by giving communities a simple way to monitor wells, understand risk, and act earlier. The solution combines a practical dashboard, province-based mapping, salinity trend tracking, CSV reporting, staff authentication, and ESP32 sensor integration.
+Wara Monitor responds to the growing challenge of water salinity in Papua New Guinea by giving communities a simple way to monitor wells, understand risk, and act earlier. The solution combines a practical dashboard, province-based mapping, salinity trend tracking, CSV reporting, staff authentication, a virtual salt-water sensor demo, and ESP32 sensor integration.
 
 By turning raw salinity readings into clear safety statuses and field-response recommendations, Wara Monitor can help communities protect freshwater sources, reduce unsafe water use, and improve climate resilience. The prototype is ready for hackathon demonstration and can be expanded into a real low-cost monitoring network for coastal and island communities.
-
