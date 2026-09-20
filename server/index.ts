@@ -4,10 +4,12 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import 'dotenv/config';
 import open from 'open'; // Add at the top of index.ts
+import { setupLiveEvents } from "./live";
 
 
 const app = express();
 const httpServer = createServer(app);
+setupLiveEvents(httpServer);
 
 declare module "http" {
   interface IncomingMessage {

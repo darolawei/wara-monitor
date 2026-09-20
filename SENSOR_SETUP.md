@@ -125,8 +125,8 @@ void loop() {
 1. Start the Wokwi simulation.
 2. Open the Serial Monitor.
 3. Turn the potentiometer.
-4. Refresh your Wara Monitor dashboard or open the well detail page.
-5. Watch the salinity reading and status update.
+4. Open your Wara Monitor dashboard or the well detail page.
+5. Watch the salinity reading and status update live.
 
 Status thresholds:
 

@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { useLiveReadings } from "@/hooks/use-live-readings";
 
 // Pages
 import Dashboard from "@/pages/Dashboard";
@@ -16,6 +17,8 @@ import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
 function Router() {
+  useLiveReadings();
+
   return (
     <Switch>
       <Route path="/login" component={Login} />

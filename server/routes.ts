@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { setupAuth, requireAuth, seedDefaultUser } from "./auth";
+import { broadcastReadingCreated } from "./live";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -79,6 +80,8 @@ export async function registerRoutes(
         wellId: input.wellId,
         salinity: String(input.salinity),
       });
+      const updatedWell = await storage.getWell(input.wellId);
+      broadcastReadingCreated(reading, updatedWell);
 
       res.status(201).json(reading);
     } catch (err) {
@@ -117,6 +120,8 @@ export async function registerRoutes(
       });
       const input = bodySchema.parse(req.body);
       const reading = await storage.createReading(input);
+      const updatedWell = await storage.getWell(input.wellId);
+      broadcastReadingCreated(reading, updatedWell);
       res.status(201).json(reading);
     } catch (err) {
       if (err instanceof z.ZodError) {
