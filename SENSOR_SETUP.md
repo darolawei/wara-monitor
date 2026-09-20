@@ -57,6 +57,8 @@ Potentiometer SIG  -> ESP32 GPIO34
 
 The potentiometer simulates the salinity sensor. Turn it up to simulate adding salt water.
 
+If you want the ESP32 simulator to follow the Wara Monitor `/simulator` page instead of the potentiometer, use the linked simulator code below. Moving the water and salt controls in Wara Monitor will change the values printed by the ESP32 Serial Monitor.
+
 ## 4. ESP32 Arduino Code
 
 Replace `YOUR_RENDER_URL` and `YOUR_SENSOR_API_KEY`.
@@ -117,6 +119,97 @@ void loop() {
   }
 
   delay(5000);
+}
+```
+
+## 4B. ESP32 Code Linked to the Wara Monitor Simulator Tab
+
+Use this version when you want the ESP32 to read the live value from the web app simulator controls.
+
+Replace `YOUR_RENDER_URL` and `YOUR_SENSOR_API_KEY`.
+
+```cpp
+#include <WiFi.h>
+#include <HTTPClient.h>
+
+const char* WIFI_SSID = "Wokwi-GUEST";
+const char* WIFI_PASSWORD = "";
+
+const char* SIMULATOR_STATE_URL = "https://YOUR_RENDER_URL/api/sensor/simulator-state";
+const char* API_URL = "https://YOUR_RENDER_URL/api/sensor/readings";
+const char* SENSOR_API_KEY = "YOUR_SENSOR_API_KEY";
+
+String getJsonValue(String json, String key) {
+  String marker = "\"" + key + "\":";
+  int start = json.indexOf(marker);
+  if (start < 0) return "";
+  start += marker.length();
+  int end = json.indexOf(",", start);
+  if (end < 0) end = json.indexOf("}", start);
+  return json.substring(start, end);
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD, 6);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(250);
+    Serial.print(".");
+  }
+  Serial.println(" connected");
+}
+
+void loop() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(SIMULATOR_STATE_URL);
+    http.addHeader("x-sensor-key", SENSOR_API_KEY);
+
+    int statusCode = http.GET();
+    String response = http.getString();
+    http.end();
+
+    if (statusCode == 200) {
+      int wellId = getJsonValue(response, "wellId").toInt();
+      float waterMl = getJsonValue(response, "waterMl").toFloat();
+      float saltGrams = getJsonValue(response, "saltGrams").toFloat();
+      float salinity = getJsonValue(response, "salinity").toFloat();
+
+      Serial.print("Linked simulator -> Well: ");
+      Serial.print(wellId);
+      Serial.print(" Water: ");
+      Serial.print(waterMl, 0);
+      Serial.print(" ml Salt: ");
+      Serial.print(saltGrams, 2);
+      Serial.print(" g Salinity: ");
+      Serial.print(salinity, 2);
+      Serial.println(" ppt");
+
+      HTTPClient post;
+      post.begin(API_URL);
+      post.addHeader("Content-Type", "application/json");
+      post.addHeader("x-sensor-key", SENSOR_API_KEY);
+
+      String body = "{\"wellId\":";
+      body += wellId;
+      body += ",\"salinity\":";
+      body += String(salinity, 2);
+      body += "}";
+
+      int postStatus = post.POST(body);
+      Serial.print("Dashboard upload status: ");
+      Serial.println(postStatus);
+      post.end();
+    } else {
+      Serial.print("Simulator read failed: ");
+      Serial.println(statusCode);
+      Serial.println(response);
+    }
+  }
+
+  delay(1000);
 }
 ```
 

@@ -10,6 +10,7 @@ import {
   Play,
   RotateCcw,
   Send,
+  Wifi,
   Waves,
 } from "lucide-react";
 
@@ -72,6 +73,7 @@ export default function SensorSimulator() {
   const [saltGrams, setSaltGrams] = useState(0.25);
   const [isRunningDemo, setIsRunningDemo] = useState(false);
   const [lastSent, setLastSent] = useState<number | null>(null);
+  const [linkStatus, setLinkStatus] = useState<"syncing" | "linked" | "error">("syncing");
 
   useEffect(() => {
     if (!selectedWellId && wells && wells.length > 0) {
@@ -94,6 +96,35 @@ export default function SensorSimulator() {
   const fillPercent = Math.min(92, Math.max(34, (waterMl / 750) * 86));
   const saltinessPercent = Math.min(100, (salinity / 5) * 100);
   const conductivity = salinity * 1.9;
+
+  useEffect(() => {
+    if (!selectedWellId) return;
+
+    const syncTimer = window.setTimeout(async () => {
+      setLinkStatus("syncing");
+      try {
+        const response = await fetch("/api/simulator/state", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            wellId: selectedWellId,
+            waterMl,
+            saltGrams,
+            salinity: Number(salinity.toFixed(2)),
+          }),
+        });
+
+        if (!response.ok) throw new Error("Simulator link update failed");
+        setLinkStatus("linked");
+      } catch (error) {
+        console.error(error);
+        setLinkStatus("error");
+      }
+    }, 250);
+
+    return () => window.clearTimeout(syncTimer);
+  }, [saltGrams, salinity, selectedWellId, waterMl]);
 
   const sendReading = () => {
     if (!selectedWellId) {
@@ -148,6 +179,13 @@ export default function SensorSimulator() {
           <Badge variant="secondary" className="mb-4 gap-2 rounded-full px-3 py-1">
             <FlaskConical className="h-3.5 w-3.5" />
             Virtual hardware demo
+          </Badge>
+          <Badge
+            variant={linkStatus === "error" ? "destructive" : "secondary"}
+            className="mb-4 ml-2 gap-2 rounded-full px-3 py-1"
+          >
+            <Wifi className="h-3.5 w-3.5" />
+            ESP32 {linkStatus === "linked" ? "linked" : linkStatus === "syncing" ? "syncing" : "offline"}
           </Badge>
           <h1 className="text-4xl md:text-5xl font-display font-extrabold tracking-tight">
             Salt Water <span className="text-gradient">Sensor Simulator</span>
@@ -366,4 +404,3 @@ export default function SensorSimulator() {
     </MainLayout>
   );
 }
-

@@ -5,6 +5,7 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { setupAuth, requireAuth, seedDefaultUser } from "./auth";
 import { broadcastReadingCreated } from "./live";
+import { getSimulatorState, simulatorStateSchema, updateSimulatorState } from "./simulator-state";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -31,6 +32,40 @@ export async function registerRoutes(
   app.get(api.readings.list.path, async (req, res) => {
     const readingsList = await storage.getReadings(Number(req.params.wellId));
     res.json(readingsList);
+  });
+
+  app.get('/api/sensor/simulator-state', async (req, res) => {
+    const expectedKey = process.env.SENSOR_API_KEY;
+    if (!expectedKey) {
+      return res.status(500).json({ message: 'SENSOR_API_KEY is not configured' });
+    }
+
+    const providedKey = req.header('x-sensor-key') || req.header('authorization')?.replace(/^Bearer\s+/i, '');
+    if (providedKey !== expectedKey) {
+      return res.status(401).json({ message: 'Invalid sensor API key' });
+    }
+
+    res.json(getSimulatorState());
+  });
+
+  app.put('/api/simulator/state', requireAuth, async (req, res) => {
+    try {
+      const input = simulatorStateSchema.parse(req.body);
+      const well = await storage.getWell(input.wellId);
+      if (!well) {
+        return res.status(404).json({ message: 'Well not found' });
+      }
+
+      res.json(updateSimulatorState(input));
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      throw err;
+    }
   });
 
   // CSV export — public
